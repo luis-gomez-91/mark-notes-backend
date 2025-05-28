@@ -1,31 +1,26 @@
-from fastapi import Depends, HTTPException
-from fastapi.security import HTTPBearer
-from jose import jwt
-import requests
-
-SUPABASE_PROJECT_ID = "wfojlrhaxxgxcfoimhgj"
-SUPABASE_URL = f"https://{SUPABASE_PROJECT_ID}.supabase.co"
-JWKS_URL = f"{SUPABASE_URL}/auth/v1/.well-known/jwks.json"
-AUDIENCE = SUPABASE_PROJECT_ID  # El mismo que tu "ref"
-ISSUER = f"{SUPABASE_URL}/auth/v1"
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from jose import jwt, JWTError
+import os
 
 security = HTTPBearer()
-jwks = requests.get(JWKS_URL).json()  # Idealmente cachear en producción
 
-def verify_token(token: str):
+SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
+SUPABASE_JWT_ALGORITHM = "HS256"
+
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    token = credentials.credentials
     try:
-        unverified_header = jwt.get_unverified_header(token)
-        key = next(k for k in jwks["keys"] if k["kid"] == unverified_header["kid"])
-        payload = jwt.decode(
-            token,
-            key,
-            algorithms=["RS256"],
-            audience=AUDIENCE,
-            issuer=ISSUER
+        payload = jwt.decode(token, SUPABASE_JWT_SECRET, algorithms=[SUPABASE_JWT_ALGORITHM])
+        user_id = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token inválido: sin sub"
+            )
+        return user_id
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido"
         )
-        return payload
-    except Exception:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-def get_current_user(token=Depends(security)):
-    return verify_token(token.credentials)
