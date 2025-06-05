@@ -1,6 +1,5 @@
 from pydantic import BaseModel, UUID4
-# from uuid import UUID
-from typing import Optional, TypeVar, Generic, List, Generic
+from typing import Optional, TypeVar, Generic, List
 
 class NoteCreate(BaseModel):
     user_id: UUID4
@@ -19,13 +18,13 @@ class NoteResponse(BaseModel):
 T = TypeVar("T")
 
 class ErrorResponse(BaseModel):
-    title: str
+    code: Optional[str]
     message: str
 
 class BaseResponse(BaseModel, Generic[T]):
-    status: str  # "success" o "error"
-    data: Optional[T]
-    error: Optional[ErrorResponse]
+    status: str
+    data: Optional[T] = None
+    error: Optional[ErrorResponse] = None
 
 class TagResponse(BaseModel):
     id: UUID4
@@ -47,14 +46,22 @@ class FolderResponse(BaseModel):
 
 class NotesResponse(BaseModel):
     id: UUID4
+    user_id: UUID4
     title: str
-    content: Optional[str]
-    starred: bool
-    is_archived: bool
-    is_deleted: bool
-    folder: FolderResponse = None
+    content: Optional[str] = None
+    starred: bool = False
+    is_archived: bool = False
+    is_deleted: bool = False
+    folder: Optional[FolderResponse] = None
     tags: List[TagResponse] = []
 
     model_config = {
         "from_attributes": True
     }
+
+
+class LoginSuccessData(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user_id: str
+    email: Optional[str] = None
