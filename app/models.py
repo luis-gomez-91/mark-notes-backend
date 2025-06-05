@@ -30,9 +30,8 @@ class Nota(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     tags = relationship("Tag", secondary="note_tags", back_populates="notas")
-    versions = relationship("NoteVersion", backref="nota", cascade="all, delete-orphan")
-    
-
+    folder = relationship("Folder", back_populates="notas")
+    versions = relationship("NoteVersion", back_populates="nota", cascade="all, delete-orphan")
 
 class Tag(Base):
     __tablename__ = "tags"
@@ -59,7 +58,8 @@ class Folder(Base):
     user_id = Column(UUID(as_uuid=True), ForeignKey("auth.users.id"), nullable=False)
     name = Column(String(100), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
-    notas = relationship("Nota", backref="folder")
+    notas = relationship("Nota", back_populates="folder")
+
 
 
 class NoteVersion(Base):
@@ -69,3 +69,4 @@ class NoteVersion(Base):
     note_id = Column(UUID(as_uuid=True), ForeignKey("notas.id"), nullable=False)
     content = Column(Text, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    nota = relationship("Nota", back_populates="versions")

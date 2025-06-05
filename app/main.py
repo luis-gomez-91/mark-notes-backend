@@ -1,7 +1,9 @@
+from .models import Nota
+from dotenv import load_dotenv
+load_dotenv()
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
-from app.routers import protected_routes, notes
-from .models import Nota
+from app.routers import protected_routes, notes, create_note
 
 app = FastAPI()
 
@@ -11,3 +13,4 @@ async def root():
 
 app.include_router(notes.router)
 app.include_router(protected_routes.router)
+app.include_router(create_note.router)
